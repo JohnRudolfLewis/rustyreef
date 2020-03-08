@@ -9,6 +9,7 @@ type ValChildren = Vec<Box<Val>>;
 pub enum Val {
     Risp(ValChildren),
     Num(i64),
+    Sym(String),
 }
 
 // Constructors
@@ -19,6 +20,10 @@ pub fn val_risp() -> Box<Val> {
 
 pub fn val_num(n: i64) -> Box<Val> {
     Box::new(Val::Num(n))
+}
+
+pub fn val_sym(s: &str) -> Box<Val> {
+    Box::new(Val::Sym(s.into()))
 }
 
 // Manipulating Children

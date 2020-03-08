@@ -42,6 +42,7 @@ fn val_read(parsed: Pair<Rule>) -> RispResult {
         }
         Rule::expr => val_read(parsed.into_inner().next().unwrap()),
         Rule::num => Ok(val_num(parsed.as_str().parse::<i64>()?)),
+        Rule::symbol => Ok(val_sym(parsed.as_str())),
         _ => unreachable!(),
     }
 }
@@ -95,6 +96,39 @@ mod test {
                 assert_eq!(val_num(1), (&children[0]).clone(), "Should have been Val::Num(1)");
                 assert_eq!(val_num(2), (&children[1]).clone(), "Should have been Val::Num(1)");
                 assert_eq!(val_num(3), (&children[2]).clone(), "Should have been Val::Num(1)");
+            },
+            _ => assert!(false, "should have been a Val::Risp")
+        }
+    }
+
+    #[test]
+    fn parse_single_symbol() {
+        init();
+        let res = parse("a");
+        assert!(res.is_ok(), "single symbol should parse");
+
+        match *res.unwrap() {
+            Val::Risp(children) => {
+                assert_eq!(1, children.len(), "Should have had one child");
+                let child = (&children[0]).clone();
+                assert_eq!(val_sym("a"), child, "Should have been Val::Sym(a)");
+            },
+            _ => assert!(false, "should have been a Val::Risp")
+        }
+    }
+
+    #[test]
+    fn parse_list_of_symbols() {
+        init();
+        let res = parse("a b c");
+        assert!(res.is_ok(), "list of symbols should parse");
+
+        match *res.unwrap() {
+            Val::Risp(children) => {
+                assert_eq!(3, children.len(), "Should have had three children");
+                assert_eq!(val_sym("a"), (&children[0]).clone(), "Should have been Val::Sym(a)");
+                assert_eq!(val_sym("b"), (&children[1]).clone(), "Should have been Val::Sym(b)");
+                assert_eq!(val_sym("c"), (&children[2]).clone(), "Should have been Val::Sym(c)");
             },
             _ => assert!(false, "should have been a Val::Risp")
         }
