@@ -8,7 +8,8 @@ use std::{
 pub enum RispError {
     NoChildren,
     NotANumber,
-    ParseError(String)
+    ParseError(String),
+    UnknownFunction(String),
 }
 
 impl fmt::Display for RispError {
@@ -18,6 +19,7 @@ impl fmt::Display for RispError {
             NoChildren => write!(f, "Val has no children"),
             NotANumber => write!(f, "NaN"),
             ParseError(s) => write!(f, "Parse error: {}", s),
+            UnknownFunction(s) => write!(f, "Unknown function {}", s),
         }
     }
 }
