@@ -68,7 +68,7 @@ mod test {
     }
 
     #[test]
-    fn parsing_single_num() {
+    fn parse_single_num() {
         init();
         let res = parse("1");
         assert!(res.is_ok(), "single number should parse");
@@ -78,6 +78,23 @@ mod test {
                 assert_eq!(1, children.len(), "Should have had one child");
                 let child = (&children[0]).clone();
                 assert_eq!(val_num(1), child, "Should have been Val::Num(1)");
+            },
+            _ => assert!(false, "should have been a Val::Risp")
+        }
+    }
+
+    #[test]
+    fn parse_list_of_numbers() {
+        init();
+        let res = parse("1 2 3");
+        assert!(res.is_ok(), "list of numbers should parse");
+
+        match *res.unwrap() {
+            Val::Risp(children) => {
+                assert_eq!(3, children.len(), "Should have had three children");
+                assert_eq!(val_num(1), (&children[0]).clone(), "Should have been Val::Num(1)");
+                assert_eq!(val_num(2), (&children[1]).clone(), "Should have been Val::Num(1)");
+                assert_eq!(val_num(3), (&children[2]).clone(), "Should have been Val::Num(1)");
             },
             _ => assert!(false, "should have been a Val::Risp")
         }
