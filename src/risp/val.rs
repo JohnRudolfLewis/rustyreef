@@ -10,6 +10,7 @@ pub enum Val {
     Risp(ValChildren),
     Num(i64),
     Sym(String),
+    List(ValChildren),
 }
 
 // Constructors
@@ -26,11 +27,16 @@ pub fn val_sym(s: &str) -> Box<Val> {
     Box::new(Val::Sym(s.into()))
 }
 
+pub fn val_list() -> Box<Val> {
+    Box::new(Val::List(Vec::new()))
+}
+
 // Manipulating Children
 
 pub fn val_add(v: &mut Val, x: &Val) -> Result<()> {
     match *v {
-        Val::Risp(ref mut children) => {
+        Val::Risp(ref mut children)
+        | Val::List(ref mut children) => {
             children.push(Box::new(x.clone()));
         }
         _ => return Err(RispError::NoChildren),

@@ -41,6 +41,11 @@ fn val_read(parsed: Pair<Rule>) -> RispResult {
             Ok(ret)
         }
         Rule::expr => val_read(parsed.into_inner().next().unwrap()),
+        Rule::list => {
+            let mut ret = val_list();
+            read_to_val(&mut ret, parsed)?;
+            Ok(ret)
+        }
         Rule::num => Ok(val_num(parsed.as_str().parse::<i64>()?)),
         Rule::symbol => Ok(val_sym(parsed.as_str())),
         _ => unreachable!(),
@@ -51,6 +56,7 @@ pub fn parse(s: &str) -> RispResult {
     let parsed = RispParser::parse(Rule::risp, s)?.next().unwrap();
     debug!("{}", parsed);
     let val_ptr = val_read(parsed)?;
+    debug!("Parsed: {:?}", *val_ptr);
     Ok(val_ptr)
 }
 
@@ -69,7 +75,7 @@ mod test {
     }
 
     #[test]
-    fn parse_single_num() {
+    fn parse_single_number() {
         init();
         let res = parse("1");
         assert!(res.is_ok(), "single number should parse");
@@ -85,7 +91,7 @@ mod test {
     }
 
     #[test]
-    fn parse_list_of_numbers() {
+    fn parse_multiple_numbers() {
         init();
         let res = parse("1 2 3");
         assert!(res.is_ok(), "list of numbers should parse");
@@ -118,7 +124,7 @@ mod test {
     }
 
     #[test]
-    fn parse_list_of_symbols() {
+    fn parse_multiple_symbols() {
         init();
         let res = parse("a b c");
         assert!(res.is_ok(), "list of symbols should parse");
@@ -132,5 +138,35 @@ mod test {
             },
             _ => assert!(false, "should have been a Val::Risp")
         }
+    }
+
+    #[test]
+    fn parse_list_of_numbers_and_symbols() {
+        init();
+
+        let res = match parse("(+ 1 a b)") {
+            Ok(p) => *p,
+            Err(err) => {
+                debug!("{}", err);
+                return assert!(false, err)
+            }
+        };
+
+        let risp_children = match res {
+            Val::Risp(children) => children,
+            _ => return assert!(false, "should have been a Val::Risp")
+        };
+        assert_eq!(1, risp_children.len(), "Risp should have had one child");
+
+        let list = match &*risp_children[0] {
+            Val::List(l) => l,
+            _ => return assert!(false, "Risp should have had a List as its one child")
+        };
+        assert_eq!(4, list.len(), "List should have had four children");
+
+        assert_eq!(val_sym("+"), list[0], "First element in list should have been Val::Sym(a)");
+        assert_eq!(val_num(1), list[1], "Second element in list should have been Val::Num(1)");
+        assert_eq!(val_sym("a"), list[2], "Third element in list should have been Val::Sym(a)");
+        assert_eq!(val_sym("b"), list[3], "Fourth element in list should have been Val::Sym(b)");
     }
 }

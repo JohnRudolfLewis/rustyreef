@@ -1,5 +1,5 @@
 use std::{
-    fmt::{Debug},
+    fmt::{self, Debug},
     hash::Hash,
     marker::Copy,
 };
@@ -9,6 +9,17 @@ pub enum RispError {
     NoChildren,
     NotANumber,
     ParseError(String)
+}
+
+impl fmt::Display for RispError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use RispError::*;
+        match self {
+            NoChildren => write!(f, "Val has no children"),
+            NotANumber => write!(f, "NaN"),
+            ParseError(s) => write!(f, "Parse error: {}", s),
+        }
+    }
 }
 
 impl<T> From<pest::error::Error<T>> for RispError
