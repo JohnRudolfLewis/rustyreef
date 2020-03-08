@@ -2,7 +2,6 @@ use log::debug;
 use pest::{iterators::Pair, Parser};
 
 use crate::risp::{
-    error::RispError,
     result::{RispResult, Result},
     val::*,
 };

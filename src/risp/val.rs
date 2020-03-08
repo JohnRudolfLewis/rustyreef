@@ -13,6 +13,17 @@ pub enum Val {
     List(ValChildren),
 }
 
+impl Val {
+    pub fn len(&self) -> Result<usize> {
+        match *self {
+            Val::List(ref children) | Val::Risp(ref children) => {
+                Ok(children.len())
+            }
+            _ => Err(RispError::NoChildren),
+        }
+    }
+}
+
 // Constructors
 
 pub fn val_risp() -> Box<Val> {
@@ -46,7 +57,8 @@ pub fn val_add(v: &mut Val, x: &Val) -> Result<()> {
 
 pub fn val_pop(v: &mut Val, i: usize) -> RispResult {
     match *v {
-        Val::Risp(ref mut children) => {
+        Val::Risp(ref mut children)
+        | Val::List(ref mut children) => {
             let ret = (&children[i]).clone();
             children.remove(i);
             Ok(ret)
