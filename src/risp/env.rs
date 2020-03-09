@@ -29,6 +29,18 @@ impl Env {
         ret.add_builtin("%", builtin_rem);
         ret.add_builtin("min", builtin_min);
         ret.add_builtin("max", builtin_max);
+        ret.add_builtin("gt", builtin_gt);
+        ret.add_builtin(">", builtin_gt);
+        ret.add_builtin("lt", builtin_lt);
+        ret.add_builtin("<", builtin_lt);
+        ret.add_builtin("ge", builtin_ge);
+        ret.add_builtin(">=", builtin_ge);
+        ret.add_builtin("le", builtin_le);
+        ret.add_builtin("<=", builtin_le);
+        ret.add_builtin("eq", builtin_eq);
+        ret.add_builtin("==", builtin_eq);
+        ret.add_builtin("ne", builtin_ne);
+        ret.add_builtin("/=", builtin_ne);
         ret
     }
 

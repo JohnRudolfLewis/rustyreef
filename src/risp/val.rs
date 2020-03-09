@@ -23,6 +23,7 @@ impl fmt::Debug for ValFun {
 impl fmt::Display for Val {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Val::Bool(b) => write!(f, "{}", b),
             Val::Risp(_cells) => write!(f, "<toplevel>"),
             Val::Fun(lf) => match lf {
                 ValFun::Builtin(name, _) => write!(f, "<builtin: {}>", name),
@@ -57,11 +58,12 @@ impl PartialEq for ValFun {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Val {
+    Bool(bool),
     Fun(ValFun),
-    Risp(ValChildren),
-    Num(i64),
-    Sym(String),
     List(ValChildren),
+    Num(i64),
+    Risp(ValChildren),
+    Sym(String),
 }
 
 impl Val {
@@ -102,6 +104,10 @@ pub fn val_list() -> Box<Val> {
 
 pub fn val_builtin(f: Builtin, name: &str) -> Box<Val> {
     Box::new(Val::Fun(ValFun::Builtin(name.to_string(), f)))
+}
+
+pub fn val_bool(b: bool) -> Box<Val> {
+    Box::new(Val::Bool(b))
 }
 
 // Manipulating Children

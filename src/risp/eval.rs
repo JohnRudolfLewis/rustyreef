@@ -1,4 +1,5 @@
 use log::debug;
+use std::collections::{HashSet};
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
 use crate::risp::{
@@ -108,12 +109,66 @@ fn builtin_iter_op(mut v: &mut Val, func: &str) -> RispResult {
                 } else {
                     x = val_num(y_num);
                 };
-            }
+            },
+            "gt" => {
+                debug!("builtin_op gt {} and {}", x, y);
+                let x_num = x.as_num()?;
+                let y_num = y.as_num()?;
+                if x_num > y_num {
+                    x = val_num(y_num);
+                } else {
+                    return Ok(val_bool(false));
+                };
+            },
+            "lt" => {
+                debug!("builtin_op lt {} and {}", x, y);
+                let x_num = x.as_num()?;
+                let y_num = y.as_num()?;
+                if x_num < y_num {
+                    x = val_num(x_num);
+                } else {
+                    return Ok(val_bool(false));
+                };
+            },
+            "ge" => {
+                debug!("builtin_op ge {} and {}", x, y);
+                let x_num = x.as_num()?;
+                let y_num = y.as_num()?;
+                if x_num >= y_num {
+                    x = val_num(y_num);
+                } else {
+                    return Ok(val_bool(false));
+                };
+            },
+            "le" => {
+                debug!("builtin_op le {} and {}", x, y);
+                let x_num = x.as_num()?;
+                let y_num = y.as_num()?;
+                if x_num <= y_num {
+                    x = val_num(y_num);
+                } else {
+                    return Ok(val_bool(false));
+                };
+            },
+            "eq" => {
+                debug!("builtin_op le {} and {}", x, y);
+                let x_num = x.as_num()?;
+                let y_num = y.as_num()?;
+                if x_num <= y_num {
+                    x = val_num(y_num);
+                } else {
+                    return Ok(val_bool(false));
+                };
+            },
             _ => unreachable!(),
         }
     }
 
-    Ok(x)
+    if func == "gt" || func == "lt" || func == "ge" || func == "le" || func == "eq" {
+        Ok(val_bool(true))
+    } else {
+        Ok(x)
+    }
 }
 
 pub fn eval(e: &mut Env, v: &mut Val) -> RispResult {
@@ -182,6 +237,48 @@ pub fn builtin_min(a: &mut Val) -> RispResult {
 
 pub fn builtin_max(a: &mut Val) -> RispResult {
     builtin_iter_op(a, "max")
+}
+
+pub fn builtin_gt(a: &mut Val) -> RispResult {
+    builtin_iter_op(a, "gt")
+}
+
+pub fn builtin_lt(a: &mut Val) -> RispResult {
+    builtin_iter_op(a, "lt")
+}
+
+pub fn builtin_ge(a: &mut Val) -> RispResult {
+    builtin_iter_op(a, "ge")
+}
+
+pub fn builtin_le(a: &mut Val) -> RispResult {
+    builtin_iter_op(a, "le")
+}
+
+pub fn builtin_eq(a: &mut Val) -> RispResult {
+    builtin_iter_op(a, "eq")
+}
+
+pub fn builtin_ne(mut a: &mut Val) -> RispResult {
+    let mut child_count = match *a {
+        Val::List(ref children) => children.len(),
+        _ => return Ok(Box::new(a.clone())),
+    };
+
+    let mut values = HashSet::new();
+    let x = val_pop(&mut a, 0)?;
+    values.insert(x.as_num()?);
+    while child_count > 1 {
+        let y = val_pop(&mut a, 0)?;
+        child_count -= 1;
+        let y_num = y.as_num()?;
+        if !values.contains(&y_num) {
+            values.insert(y_num);
+        } else {
+            return Ok(val_bool(false));
+        }
+    }
+    return Ok(val_bool(true));
 }
 
 #[cfg(test)]
@@ -308,6 +405,67 @@ mod test {
         init();
         let mut env = Env::new(None);
         assert_eval("(max 5 2)", &mut env, val_num(5));
+        assert_eval("(max 2 5)", &mut env, val_num(5));
+    }
+
+    #[test]
+    fn gt_multiple_numbers() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(gt 1 0)", &mut env, val_bool(true));
+        assert_eval("(gt 0 1)", &mut env, val_bool(false));
+        assert_eval("(> 1 0)", &mut env, val_bool(true));
+        assert_eval("(> 0 1)", &mut env, val_bool(false));
+        assert_eval("(> 3 2 1 0)", &mut env, val_bool(true));
+        assert_eval("(> 3 0 1 0)", &mut env, val_bool(false));
+    }
+
+    #[test]
+    fn lt_multiple_numbers() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(< 0 1)", &mut env, val_bool(true));
+        assert_eval("(< 0 1 2 3)", &mut env, val_bool(true));
+        assert_eval("(lt 1 0)", &mut env, val_bool(false));
+        assert_eval("(lt 0 1 0 3)", &mut env, val_bool(false));
+    }
+
+    #[test]
+    fn ge_multiple_numbers() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(ge 1 0)", &mut env, val_bool(true));
+        assert_eval("(ge 1 1)", &mut env, val_bool(true));
+        assert_eval("(>= 4 4 3 2 1 0)", &mut env, val_bool(true));
+        assert_eval("(ge 4 4 0 2 1 0)", &mut env, val_bool(false));
+    }
+
+    #[test]
+    fn le_multiple_numbers() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(le 0 1)", &mut env, val_bool(true));
+        assert_eval("(le 1 1)", &mut env, val_bool(true));
+        assert_eval("(<= 0 0 1 2 3 4)", &mut env, val_bool(true));
+        assert_eval("(le 0 0 1 0 3 4)", &mut env, val_bool(false));
+    }
+
+    #[test]
+    fn eq_multiple_numbers() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(eq 1 1 1)", &mut env, val_bool(true));
+        assert_eval("(== 1 1 1)", &mut env, val_bool(true));
+        assert_eval("(eq 0 0 1 0 3 4)", &mut env, val_bool(false));
+    }
+
+    #[test]
+    fn ne_multiple_numbers() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(ne 0 1 2)", &mut env, val_bool(true));
+        assert_eval("(/= 0 1 2)", &mut env, val_bool(true));
+        assert_eval("(ne 0 1 1 2 3)", &mut env, val_bool(false));
     }
 
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {
