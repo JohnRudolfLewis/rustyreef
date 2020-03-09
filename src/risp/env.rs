@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::risp::{
     error::RispError,
+    eval::*,
     result::RispResult,
-    val::Val,
+    val::*,
 };
 
 #[derive(Debug, PartialEq)]
@@ -16,7 +17,21 @@ impl Env {
         let mut ret = Self {
             data: data.unwrap_or_default()
         };
+        ret.add_builtin("add", builtin_add);
+        ret.add_builtin("+", builtin_add);
+        ret.add_builtin("sub", builtin_sub);
+        ret.add_builtin("-", builtin_sub);
+        ret.add_builtin("mul", builtin_mul);
+        ret.add_builtin("*", builtin_mul);
+        ret.add_builtin("div", builtin_div);
+        ret.add_builtin("/", builtin_div);
+        ret.add_builtin("rem", builtin_rem);
+        ret.add_builtin("%", builtin_rem);
         ret
+    }
+
+    fn add_builtin(&mut self, name: &str, func: Builtin) {
+        self.put(name.to_string(), val_builtin(func, name))
     }
 
     pub fn put(&mut self, name: String, val: Box<Val>) {

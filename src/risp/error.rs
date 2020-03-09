@@ -10,6 +10,7 @@ pub enum RispError {
     NotANumber,
     ParseError(String),
     UnknownFunction(String),
+    WrongType(String, String),
 }
 
 impl fmt::Display for RispError {
@@ -20,6 +21,7 @@ impl fmt::Display for RispError {
             NotANumber => write!(f, "NaN"),
             ParseError(s) => write!(f, "Parse error: {}", s),
             UnknownFunction(s) => write!(f, "Unknown function {}", s),
+            WrongType(expected, received) => write!(f, "Wrong type: expected {}, received {}", expected, received),
         }
     }
 }
