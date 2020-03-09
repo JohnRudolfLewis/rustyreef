@@ -27,6 +27,8 @@ impl Env {
         ret.add_builtin("/", builtin_div);
         ret.add_builtin("rem", builtin_rem);
         ret.add_builtin("%", builtin_rem);
+        ret.add_builtin("min", builtin_min);
+        ret.add_builtin("max", builtin_max);
         ret
     }
 

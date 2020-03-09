@@ -88,6 +88,26 @@ fn builtin_iter_op(mut v: &mut Val, func: &str) -> RispResult {
             "rem" => {
                 debug!("builtin_op rem {} and {}", x, y);
                 apply_binop!(rem, x, y);
+            },
+            "min" => {
+                debug!("builtin_op min {} and {}", x, y);
+                let x_num = x.as_num()?;
+                let y_num = y.as_num()?;
+                if x_num < y_num {
+                    x = val_num(x_num);
+                } else {
+                    x = val_num(y_num);
+                };
+            },
+            "max" => {
+                debug!("builtin_op max {} and {}", x, y);
+                let x_num = x.as_num()?;
+                let y_num = y.as_num()?;
+                if x_num > y_num {
+                    x = val_num(x_num);
+                } else {
+                    x = val_num(y_num);
+                };
             }
             _ => unreachable!(),
         }
@@ -154,6 +174,14 @@ pub fn builtin_div(a: &mut Val) -> RispResult {
 
 pub fn builtin_rem(a: &mut Val) -> RispResult {
     builtin_iter_op(a, "rem")
+}
+
+pub fn builtin_min(a: &mut Val) -> RispResult {
+    builtin_iter_op(a, "min")
+}
+
+pub fn builtin_max(a: &mut Val) -> RispResult {
+    builtin_iter_op(a, "max")
 }
 
 #[cfg(test)]
@@ -266,6 +294,20 @@ mod test {
         let mut env = Env::new(None);
         assert_eval("(rem 5 2)", &mut env, val_num(1));
         assert_eval("(% 5 2)", &mut env, val_num(1));
+    }
+
+    #[test]
+    fn min_two_numbers() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(min 5 2)", &mut env, val_num(2));
+    }
+
+    #[test]
+    fn max_two_numbers() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(max 5 2)", &mut env, val_num(5));
     }
 
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {
