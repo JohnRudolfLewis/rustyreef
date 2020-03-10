@@ -43,7 +43,19 @@ macro_rules! apply_binop {
             (Val::Num(x_num), Val::Num(y_num)) => {
                 $x = val_num(x_num.$op(y_num));
                 continue;
-            }
+            },
+            (Val::Num(x_num), Val::Float(y_num)) => {
+                $x = val_float((x_num as f64).$op(y_num));
+                continue;
+            },
+            (Val::Float(x_num), Val::Num(y_num)) => {
+                $x = val_float(x_num.$op((y_num as f64)));
+                continue;
+            },
+            (Val::Float(x_num), Val::Float(y_num)) => {
+                $x = val_float(x_num.$op(y_num));
+                continue;
+            },
             _ => return Err(RispError::NotANumber),
         }
     };
@@ -518,6 +530,25 @@ mod test {
         env.put("a".to_string(), val_num(1));
         env.put("b".to_string(), val_num(2));
         assert_eval("(if (> a b) (+ a b) (- a b))", &mut env, val_num(-1));
+    }
+
+    #[test]
+    fn add_two_floats() {
+        init();
+        let mut env = Env::new(None);
+        env.put("a".to_string(), val_float(1.2));
+        env.put("b".to_string(), val_float(2.3));
+        assert_eval("(+ a b)", &mut env, val_float(3.5));
+    }
+
+    #[test]
+    fn add_float_and_num() {
+        init();
+        let mut env = Env::new(None);
+        env.put("a".to_string(), val_num(3));
+        env.put("b".to_string(), val_float(0.1415));
+        assert_eval("(+ a b)", &mut env, val_float(3.1415));
+        assert_eval("(+ b a)", &mut env, val_float(3.1415));
     }
 
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {
