@@ -1,11 +1,12 @@
 use crate::risp::{
+    env::Env,
     error::{RispError},
     result::{Result, RispResult},
 };
 use std::fmt;
 
 type ValChildren = Vec<Box<Val>>;
-pub type Builtin = fn(&mut Val) -> RispResult;
+pub type Builtin = fn(&mut Env, &mut Val) -> RispResult;
 
 #[derive(Clone)]
 pub enum ValFun {
@@ -80,6 +81,13 @@ impl Val {
         match *self {
             Val::Num(n) => Ok(n),
             _ => Err(RispError::NotANumber),
+        }
+    }
+
+    pub fn as_bool(&self) -> Result<bool> {
+        match *self {
+            Val::Bool(b) => Ok(b),
+            _ => Err(RispError::WrongType("bool".to_string(), format!("{}", self))),
         }
     }
 }

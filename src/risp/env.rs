@@ -41,6 +41,7 @@ impl Env {
         ret.add_builtin("==", builtin_eq);
         ret.add_builtin("ne", builtin_ne);
         ret.add_builtin("/=", builtin_ne);
+        ret.add_builtin("if", builtin_if);
         ret
     }
 

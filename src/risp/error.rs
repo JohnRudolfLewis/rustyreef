@@ -8,6 +8,7 @@ use std::{
 pub enum RispError {
     NoChildren,
     NotANumber,
+    NumArguments(usize, usize),
     ParseError(String),
     UnknownFunction(String),
     WrongType(String, String),
@@ -19,6 +20,11 @@ impl fmt::Display for RispError {
         match self {
             NoChildren => write!(f, "Val has no children"),
             NotANumber => write!(f, "NaN"),
+            NumArguments(expected, received) => write!(
+                f,
+                "Wrong number of arguments: expected {}, received {}",
+                expected, received
+            ),
             ParseError(s) => write!(f, "Parse error: {}", s),
             UnknownFunction(s) => write!(f, "Unknown function {}", s),
             WrongType(expected, received) => write!(f, "Wrong type: expected {}, received {}", expected, received),

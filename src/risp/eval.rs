@@ -23,12 +23,12 @@ fn eval_cells(e: &mut Env, cells: &[Box<Val>]) -> RispResult {
     })
 }
 
-fn call(_e: &mut Env, f: Val, args: &mut Val) -> RispResult {
+fn call(e: &mut Env, f: Val, args: &mut Val) -> RispResult {
     match f {
         Val::Fun(func) => {
             match func {
                 ValFun::Builtin(_name, fp) => {
-                    return fp(args);
+                    return fp(e, args);
                 }
             }
         },
@@ -211,55 +211,55 @@ pub fn eval(e: &mut Env, v: &mut Val) -> RispResult {
     }
 }
 
-pub fn builtin_add(a: &mut Val) -> RispResult {
+pub fn builtin_add(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "add")
 }
 
-pub fn builtin_sub(a: &mut Val) -> RispResult {
+pub fn builtin_sub(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "sub")
 }
 
-pub fn builtin_mul(a: &mut Val) -> RispResult {
+pub fn builtin_mul(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "mul")
 }
 
-pub fn builtin_div(a: &mut Val) -> RispResult {
+pub fn builtin_div(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "div")
 }
 
-pub fn builtin_rem(a: &mut Val) -> RispResult {
+pub fn builtin_rem(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "rem")
 }
 
-pub fn builtin_min(a: &mut Val) -> RispResult {
+pub fn builtin_min(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "min")
 }
 
-pub fn builtin_max(a: &mut Val) -> RispResult {
+pub fn builtin_max(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "max")
 }
 
-pub fn builtin_gt(a: &mut Val) -> RispResult {
+pub fn builtin_gt(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "gt")
 }
 
-pub fn builtin_lt(a: &mut Val) -> RispResult {
+pub fn builtin_lt(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "lt")
 }
 
-pub fn builtin_ge(a: &mut Val) -> RispResult {
+pub fn builtin_ge(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "ge")
 }
 
-pub fn builtin_le(a: &mut Val) -> RispResult {
+pub fn builtin_le(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "le")
 }
 
-pub fn builtin_eq(a: &mut Val) -> RispResult {
+pub fn builtin_eq(_e: &mut Env, a: &mut Val) -> RispResult {
     builtin_iter_op(a, "eq")
 }
 
-pub fn builtin_ne(mut a: &mut Val) -> RispResult {
+pub fn builtin_ne(_e: &mut Env, mut a: &mut Val) -> RispResult {
     let mut child_count = match *a {
         Val::List(ref children) => children.len(),
         _ => return Ok(Box::new(a.clone())),
@@ -279,6 +279,40 @@ pub fn builtin_ne(mut a: &mut Val) -> RispResult {
         }
     }
     return Ok(val_bool(true));
+}
+
+pub fn builtin_if(e: &mut Env, a: &mut Val) -> RispResult {
+    // must have three children
+    let child_count = match *a {
+        Val::List(ref children) => children.len(),
+        _ => return Err(RispError::WrongType("list".to_string(), format!("{:?}", a)))
+    };
+    if child_count != 3 {
+        return Err(RispError::NumArguments(3, child_count));
+    }
+
+    // first child must evaluate to bool
+    let b = match *val_pop(a, 0)? {
+        Val::Bool(b) => b,
+        Val::List(cells) => {
+            match *eval_cells(e, &cells)? {
+                Val::Bool(b) => b,
+                _ => return Err(RispError::WrongType("bool".to_string(),format!("{:?}", ""))) // todo improve this error    
+            }
+        },
+        _ => { 
+            return Err(RispError::WrongType("bool".to_string(),format!("{:?}", ""))); // todo improve this error
+        }
+    };
+    
+    let mut expr_to_eval;
+    if b {
+        expr_to_eval = val_pop(a, 0)?;
+    } else {
+        expr_to_eval = val_pop(a, 1)?;
+    }
+
+    eval(e, &mut expr_to_eval)
 }
 
 #[cfg(test)]
@@ -466,6 +500,24 @@ mod test {
         assert_eval("(ne 0 1 2)", &mut env, val_bool(true));
         assert_eval("(/= 0 1 2)", &mut env, val_bool(true));
         assert_eval("(ne 0 1 1 2 3)", &mut env, val_bool(false));
+    }
+
+    #[test]
+    fn if_true() {
+        init();
+        let mut env = Env::new(None);
+        env.put("a".to_string(), val_num(1));
+        env.put("b".to_string(), val_num(2));
+        assert_eval("(if (< a b) (+ a b) (- a b))", &mut env, val_num(3));
+    }
+
+    #[test]
+    fn if_false() {
+        init();
+        let mut env = Env::new(None);
+        env.put("a".to_string(), val_num(1));
+        env.put("b".to_string(), val_num(2));
+        assert_eval("(if (> a b) (+ a b) (- a b))", &mut env, val_num(-1));
     }
 
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {
