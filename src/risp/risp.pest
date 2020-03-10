@@ -1,11 +1,14 @@
 COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 WHITESPACE = _{ (" " | NEWLINE ) }
 
-num = @{ int }
-    int = { ("+" | "-")? ~ digit+ }
-    digit = { '0'..'9' }
+num = @{
+    "-"?
+    ~ ("0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)
+    ~ ("." ~ ASCII_DIGIT*)?
+    ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+}
 
-symbol = @{ (letter | digit | "_" | arithmetic_ops | "\\" | comparison_ops | "&")+ }
+symbol = @{ (letter | ASCII_DIGIT | "_" | arithmetic_ops | "\\" | comparison_ops | "&")+ }
     letter = { 'a' .. 'z' | 'A' .. 'Z' }
     arithmetic_ops = { "+" | "-" | "*" | "/" | "%" | "^" }
     comparison_ops = { "=" | "<" | ">" | "!" }

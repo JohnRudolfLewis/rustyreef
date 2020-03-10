@@ -46,3 +46,9 @@ impl From<std::num::ParseIntError> for RispError {
         RispError::NotANumber
     }
 }
+
+impl From<std::num::ParseFloatError> for RispError {
+    fn from(_error: std::num::ParseFloatError) -> Self {
+        RispError::NotANumber
+    }
+}

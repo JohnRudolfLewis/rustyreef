@@ -2,6 +2,7 @@ use log::debug;
 use pest::{iterators::Pair, Parser};
 
 use crate::risp::{
+    error::RispError,
     result::{RispResult, Result},
     val::*,
 };
@@ -45,7 +46,22 @@ fn val_read(parsed: Pair<Rule>) -> RispResult {
             read_to_val(&mut ret, parsed)?;
             Ok(ret)
         }
-        Rule::num => Ok(val_num(parsed.as_str().parse::<i64>()?)),
+        Rule::num => {
+            let s = parsed.as_str();
+
+            let s_int = s.parse::<i64>();
+            if s_int.is_ok() {
+                return Ok(val_num(s_int?));
+            }
+
+            let s_f64 = s.parse::<f64>();
+            if s_f64.is_ok() {
+                return Ok(val_float(s_f64?));
+            }
+
+            return Err(RispError::NotANumber);
+            //Ok(val_num(parsed.as_str().parse::<i64>()?))
+        },
         Rule::symbol => Ok(val_sym(parsed.as_str())),
         _ => unreachable!(),
     }
@@ -167,5 +183,21 @@ mod test {
         assert_eq!(val_num(1), list[1], "Second element in list should have been Val::Num(1)");
         assert_eq!(val_sym("a"), list[2], "Third element in list should have been Val::Sym(a)");
         assert_eq!(val_sym("b"), list[3], "Fourth element in list should have been Val::Sym(b)");
+    }
+
+    #[test]
+    fn parse_single_float() {
+        init();
+        let res = parse("-3.1415");
+        assert!(res.is_ok(), "single float should parse");
+
+        match *res.unwrap() {
+            Val::Risp(children) => {
+                assert_eq!(1, children.len(), "Should have had one child");
+                let child = (&children[0]).clone();
+                assert_eq!(val_float(-3.1415), child, "Should have been Val::Num(1)");
+            },
+            _ => assert!(false, "should have been a Val::Risp")
+        }
     }
 }
