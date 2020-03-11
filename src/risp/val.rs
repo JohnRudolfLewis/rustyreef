@@ -3,7 +3,10 @@ use crate::risp::{
     error::{RispError},
     result::{Result, RispResult},
 };
-use std::fmt;
+use std::{
+    cmp::Ordering,
+    fmt
+};
 
 type ValChildren = Vec<Box<Val>>;
 pub type Builtin = fn(&mut Env, &mut Val) -> RispResult;
@@ -94,6 +97,24 @@ impl Val {
     }
 }
 
+impl PartialOrd for Val {
+   fn partial_cmp(&self, other: &Val) -> Option<Ordering> {
+       match self {
+           Val::Float(s) => match other {
+               Val::Num(o) => s.partial_cmp(&(*o as f64)),
+               Val::Float(o) => s.partial_cmp(&o),
+               _ => None
+           },
+           Val::Num(s) => match other {
+               Val::Num(o) => Some(s.cmp(o)),
+               Val::Float(o) => (*s as f64).partial_cmp(o),
+               _ => None
+           },
+           _ => None
+       }
+   }
+}
+
 // Constructors
 
 pub fn val_risp() -> Box<Val> {
@@ -146,5 +167,15 @@ pub fn val_pop(v: &mut Val, i: usize) -> RispResult {
             Ok(ret)
         }
         _ => Err(RispError::NoChildren),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn compare_floats() {
+        assert!(Val::Float(1.0) > Val::Float(0.0));
     }
 }

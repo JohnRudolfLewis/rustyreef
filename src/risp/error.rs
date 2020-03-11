@@ -6,6 +6,7 @@ use std::{
 
 #[derive(Debug)]
 pub enum RispError {
+    ArgumentMismatch,
     NoChildren,
     NotANumber,
     NumArguments(usize, usize),
@@ -18,6 +19,7 @@ impl fmt::Display for RispError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use RispError::*;
         match self {
+            ArgumentMismatch => write!(f, "Argument mismatch"),
             NoChildren => write!(f, "Val has no children"),
             NotANumber => write!(f, "NaN"),
             NumArguments(expected, received) => write!(

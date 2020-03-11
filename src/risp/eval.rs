@@ -1,6 +1,7 @@
 use log::debug;
 use std::collections::{HashSet};
 use std::ops::{Add, Div, Mul, Rem, Sub};
+use std::cmp::Ordering;
 
 use crate::risp::{
     env::Env,
@@ -104,73 +105,109 @@ fn builtin_iter_op(mut v: &mut Val, func: &str) -> RispResult {
             },
             "min" => {
                 debug!("builtin_op min {} and {}", x, y);
-                let x_num = x.as_num()?;
-                let y_num = y.as_num()?;
-                if x_num < y_num {
-                    x = val_num(x_num);
-                } else {
-                    x = val_num(y_num);
-                };
+                match x.partial_cmp(&y) {
+                    Some(o) => {
+                        match o {
+                            Ordering::Less => {
+                                x = x;
+                            },
+                            Ordering::Greater => {
+                                x = y;
+                            }
+                            _ => return Ok(val_bool(false))
+                        }
+                    },
+                    None => return Err(RispError::ArgumentMismatch)
+                }
             },
             "max" => {
                 debug!("builtin_op max {} and {}", x, y);
-                let x_num = x.as_num()?;
-                let y_num = y.as_num()?;
-                if x_num > y_num {
-                    x = val_num(x_num);
-                } else {
-                    x = val_num(y_num);
-                };
+                match x.partial_cmp(&y) {
+                    Some(o) => {
+                        match o {
+                            Ordering::Less => {
+                                x = y;
+                            },
+                            Ordering::Greater => {
+                                x = x;
+                            }
+                            _ => return Ok(val_bool(false))
+                        }
+                    },
+                    None => return Err(RispError::ArgumentMismatch)
+                }
             },
             "gt" => {
                 debug!("builtin_op gt {} and {}", x, y);
-                let x_num = x.as_num()?;
-                let y_num = y.as_num()?;
-                if x_num > y_num {
-                    x = val_num(y_num);
-                } else {
-                    return Ok(val_bool(false));
-                };
+                match x.partial_cmp(&y) {
+                    Some(o) => {
+                        match o {
+                            Ordering::Greater => {
+                                x = y;
+                            },
+                            _ => return Ok(val_bool(false))
+                        }
+                    },
+                    None => return Err(RispError::ArgumentMismatch)
+                }
             },
             "lt" => {
                 debug!("builtin_op lt {} and {}", x, y);
-                let x_num = x.as_num()?;
-                let y_num = y.as_num()?;
-                if x_num < y_num {
-                    x = val_num(x_num);
-                } else {
-                    return Ok(val_bool(false));
-                };
+                match x.partial_cmp(&y) {
+                    Some(o) => {
+                        match o {
+                            Ordering::Less => {
+                                x = x;
+                            },
+                            _ => return Ok(val_bool(false))
+                        }
+                    },
+                    None => return Err(RispError::ArgumentMismatch)
+                }
             },
             "ge" => {
                 debug!("builtin_op ge {} and {}", x, y);
-                let x_num = x.as_num()?;
-                let y_num = y.as_num()?;
-                if x_num >= y_num {
-                    x = val_num(y_num);
-                } else {
-                    return Ok(val_bool(false));
-                };
+                match x.partial_cmp(&y) {
+                    Some(o) => {
+                        match o {
+                            Ordering::Greater |
+                            Ordering::Equal  => {
+                                x = y;
+                            },
+                            _ => return Ok(val_bool(false))
+                        }
+                    },
+                    None => return Err(RispError::ArgumentMismatch)
+                }
             },
             "le" => {
                 debug!("builtin_op le {} and {}", x, y);
-                let x_num = x.as_num()?;
-                let y_num = y.as_num()?;
-                if x_num <= y_num {
-                    x = val_num(y_num);
-                } else {
-                    return Ok(val_bool(false));
-                };
+                match x.partial_cmp(&y) {
+                    Some(o) => {
+                        match o {
+                            Ordering::Less |
+                            Ordering::Equal  => {
+                                x = y;
+                            },
+                            _ => return Ok(val_bool(false))
+                        }
+                    },
+                    None => return Err(RispError::ArgumentMismatch)
+                }
             },
             "eq" => {
                 debug!("builtin_op le {} and {}", x, y);
-                let x_num = x.as_num()?;
-                let y_num = y.as_num()?;
-                if x_num <= y_num {
-                    x = val_num(y_num);
-                } else {
-                    return Ok(val_bool(false));
-                };
+                match x.partial_cmp(&y) {
+                    Some(o) => {
+                        match o {
+                            Ordering::Equal  => {
+                                x = y;
+                            },
+                            _ => return Ok(val_bool(false))
+                        }
+                    },
+                    None => return Err(RispError::ArgumentMismatch)
+                }
             },
             _ => unreachable!(),
         }
@@ -549,6 +586,22 @@ mod test {
         env.put("b".to_string(), val_float(0.1415));
         assert_eval("(+ a b)", &mut env, val_float(3.1415));
         assert_eval("(+ b a)", &mut env, val_float(3.1415));
+    }
+
+    #[test]
+    fn compare_float_and_num() {
+        init();
+        let mut env = Env::new(None);
+        env.put("a".to_string(), val_num(3));
+        env.put("b".to_string(), val_float(0.1415));
+        env.put("c".to_string(), val_float(3.0));
+        assert_eval("(< a b)", &mut env, val_bool(false));
+        assert_eval("(> a b)", &mut env, val_bool(true));
+        assert_eval("(>= a c)", &mut env, val_bool(true));
+        assert_eval("(<= a c)", &mut env, val_bool(true));
+        assert_eval("(== a c)", &mut env, val_bool(true));
+        assert_eval("(min a b)", &mut env, val_float(0.1415));
+        assert_eval("(max a b)", &mut env, val_num(3));
     }
 
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {
