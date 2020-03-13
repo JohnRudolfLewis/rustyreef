@@ -7,6 +7,7 @@ use std::{
     cmp::Ordering,
     fmt
 };
+use chrono::NaiveTime;
 
 type ValChildren = Vec<Box<Val>>;
 pub type Builtin = fn(&mut Env, &mut Val) -> RispResult;
@@ -36,6 +37,7 @@ impl fmt::Display for Val {
             Val::Num(n) => write!(formatter, "{}", n),
             Val::Sym(s) => write!(formatter, "{}", s),
             Val::List(cell) => write!(formatter, "({})", val_expr_print(cell)),
+            Val::Time(t) => write!(formatter, "{}", t),
         }
     }
 }
@@ -70,6 +72,7 @@ pub enum Val {
     Num(i64),
     Risp(ValChildren),
     Sym(String),
+    Time(NaiveTime),
 }
 
 impl Val {
@@ -143,6 +146,10 @@ pub fn val_bool(b: bool) -> Box<Val> {
 
 pub fn val_float(f: f64) -> Box<Val> {
     Box::new(Val::Float(f))
+}
+
+pub fn val_time(t: NaiveTime) -> Box<Val> {
+    Box::new(Val::Time(t))
 }
 
 // Manipulating Children

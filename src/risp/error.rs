@@ -54,3 +54,9 @@ impl From<std::num::ParseFloatError> for RispError {
         RispError::NotANumber
     }
 }
+
+impl From<chrono::format::ParseError> for RispError {
+    fn from(error: chrono::format::ParseError) -> Self {
+        RispError::ParseError(format!("{}", error))
+    }
+}
