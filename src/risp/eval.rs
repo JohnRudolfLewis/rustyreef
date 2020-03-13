@@ -3,7 +3,7 @@ use std::collections::{HashSet};
 use std::ops::{Add, Div, Mul, Rem, Sub};
 use std::cmp::Ordering;
 
-use chrono::{NaiveDate, NaiveTime, NaiveDateTime};
+use chrono::{NaiveDate, NaiveTime};
 
 use crate::risp::{
     env::Env,

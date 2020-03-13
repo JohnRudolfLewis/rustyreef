@@ -95,13 +95,6 @@ impl Val {
             _ => Err(RispError::NotANumber),
         }
     }
-
-    pub fn as_bool(&self) -> Result<bool> {
-        match *self {
-            Val::Bool(b) => Ok(b),
-            _ => Err(RispError::WrongType("bool".to_string(), format!("{}", self))),
-        }
-    }
 }
 
 impl PartialOrd for Val {

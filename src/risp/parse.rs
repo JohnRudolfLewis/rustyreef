@@ -112,10 +112,10 @@ mod test {
     #[test]
     fn parsing_nonsense_results_in_error() {
         init();
-        let parsed = match parse("/|garbage|/") {
+        match parse("/|garbage|/") {
             Ok(p) => return assert!(false, format!("Should not have parsed: {:?}", p)),
-            Err(e) => {}
-        };
+            Err(_) => {}
+        }
     }
 
     #[test]
