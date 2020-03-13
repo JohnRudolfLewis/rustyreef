@@ -3,7 +3,7 @@ use std::collections::{HashSet};
 use std::ops::{Add, Div, Mul, Rem, Sub};
 use std::cmp::Ordering;
 
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{Duration, NaiveDate, NaiveTime, offset::Local};
 
 use crate::risp::{
     env::Env,
@@ -27,6 +27,7 @@ fn eval_cells(e: &mut Env, cells: &[Box<Val>]) -> RispResult {
 }
 
 fn call(e: &mut Env, f: Val, args: &mut Val) -> RispResult {
+    debug!("call");
     match f {
         Val::Fun(func) => {
             match func {
@@ -234,11 +235,10 @@ pub fn eval(e: &mut Env, v: &mut Val) -> RispResult {
         Val::Sym(s) => {
             let result = e.get(&s)?;
             debug!(
-                "lval_eval: Symbol lookup - retrieved {:?} from key {:?}",
+                "eval: Symbol lookup - retrieved {:?} from key {:?}",
                 result, s
             );
-            // The environment stores Lvals ready to go, we're done
-            return Ok(result);
+           return Ok(result);
         }
         Val::List(ref mut cells) => {
             debug!("eval: List, evaluating children");
@@ -252,13 +252,18 @@ pub fn eval(e: &mut Env, v: &mut Val) -> RispResult {
     }
     if child_count == 0 {
         Ok(Box::new(v.clone()))
-    } else if child_count == 1 {
-        debug!("Single-expression");
-        eval(e, &mut *val_pop(v, 0)?)
     } else {
-        let fp = val_pop(&mut args_eval, 0)?;
-        debug!("Calling function {:?} on {:?}", fp, v);
-        call(e, *fp, &mut *args_eval)
+        match *val_peek(&mut args_eval, 0)? {
+            Val::Fun(_) => {
+                let fp = val_pop(&mut args_eval, 0)?;
+                debug!("Calling function {:?} on {:?}", fp, v);
+                call(e, *fp, &mut *args_eval)
+            },
+            _ => {
+                debug!("Single-expression");
+                eval(e, &mut *val_pop(v, 0)?)
+            }
+        }
     }
 }
 
@@ -364,6 +369,21 @@ pub fn builtin_if(e: &mut Env, a: &mut Val) -> RispResult {
     }
 
     eval(e, &mut expr_to_eval)
+}
+
+pub fn builtin_now(_e: &mut Env, a: &mut Val) -> RispResult {
+    // must have zero children
+    let child_count = match *a {
+        Val::List(ref children) => children.len(),
+        _ => return Err(RispError::WrongType("list".to_string(), format!("{:?}", a)))
+    };
+    if child_count != 0 {
+        return Err(RispError::NumArguments(0, child_count));
+    }
+    let now = Local::now().naive_local();
+    debug!("Now {}", now);
+    
+    return Ok(val_datetime(now));
 }
 
 #[cfg(test)]
@@ -656,6 +676,19 @@ mod test {
         env.put("t2".to_string(), val_time(NaiveTime::from_hms(10, 0, 0)));
         assert_eval("(> t1 t2)", &mut env, val_bool(false));
         assert_eval("(> t2 t1)", &mut env, val_bool(true));
+    }
+
+    #[test]
+    fn can_get_current_datetime_and_compare() {
+        init();
+        let now = Local::now().naive_local();
+        let t1 = now.add(Duration::seconds(-1));
+        let t2 = now.add(Duration::seconds(1));
+        let mut env = Env::new(None);
+        env.put("t1".to_string(), val_datetime(t1));
+        env.put("t2".to_string(), val_datetime(t2));
+        assert_eval("(> (now) t1)", &mut env, val_bool(true));
+        assert_eval("(> (now) t2)", &mut env, val_bool(false));
     }
     
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {

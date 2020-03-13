@@ -202,6 +202,17 @@ pub fn val_pop(v: &mut Val, i: usize) -> RispResult {
     }
 }
 
+pub fn val_peek(v: &mut Val, i: usize) -> RispResult {
+    match *v {
+        Val::Risp(ref mut children)
+        | Val::List(ref mut children) => {
+            let ret = (&children[i]).clone();
+            Ok(ret)
+        }
+        _ => Err(RispError::NoChildren),
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
