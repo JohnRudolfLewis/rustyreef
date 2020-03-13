@@ -62,6 +62,7 @@ fn val_read(parsed: Pair<Rule>) -> RispResult {
             return Err(RispError::NotANumber);
             //Ok(val_num(parsed.as_str().parse::<i64>()?))
         },
+        Rule::operator => Ok(val_sym(parsed.as_str())),
         Rule::symbol => Ok(val_sym(parsed.as_str())),
         _ => unreachable!(),
     }
@@ -83,43 +84,33 @@ mod test {
         let _ = env_logger::builder().is_test(true).try_init();
     }
 
+    fn assert_parse_risp(input: &str, expected: &str) {
+        let parsed = match parse(input) {
+            Ok(p) => format!("{:?}", p),
+            Err(e) => return assert!(false, format!("Parse failed: {:?}", e))
+        };
+        assert_eq!(parsed, expected);
+    }
+
     #[test]
     fn parsing_nonsense_results_in_error() {
         init();
-        assert!(parse("/|garbage|/").is_err(), "garbage should not parse");
+        let parsed = match parse("/|garbage|/") {
+            Ok(p) => return assert!(false, format!("Should not have parsed: {:?}", p)),
+            Err(e) => {}
+        };
     }
 
     #[test]
     fn parse_single_number() {
         init();
-        let res = parse("1");
-        assert!(res.is_ok(), "single number should parse");
-
-        match *res.unwrap() {
-            Val::Risp(children) => {
-                assert_eq!(1, children.len(), "Should have had one child");
-                let child = (&children[0]).clone();
-                assert_eq!(val_num(1), child, "Should have been Val::Num(1)");
-            },
-            _ => assert!(false, "should have been a Val::Risp")
-        }
+        assert_parse_risp("1", "Risp([Num(1)])");
     }
 
     #[test]
     fn parse_multiple_numbers() {
         init();
-        let res = parse("1 2 3");
-        assert!(res.is_ok(), "list of numbers should parse");
-
-        match *res.unwrap() {
-            Val::Risp(children) => {
-                assert_eq!(3, children.len(), "Should have had three children");
-                assert_eq!(val_num(1), (&children[0]).clone(), "Should have been Val::Num(1)");
-                assert_eq!(val_num(2), (&children[1]).clone(), "Should have been Val::Num(1)");
-                assert_eq!(val_num(3), (&children[2]).clone(), "Should have been Val::Num(1)");
-            },
-            _ => assert!(false, "should have been a Val::Risp")
-        }
+        assert_parse_risp("1 2 3", "Risp([Num(1), Num(2), Num(3)])");
     }
 
     #[test]
@@ -139,6 +130,29 @@ mod test {
     }
 
     #[test]
+    fn symbol_can_have_numbers() {
+        init();
+        let res = parse("a1");
+        assert!(res.is_ok(), "single symbol with number should parse");
+
+        match *res.unwrap() {
+            Val::Risp(children) => {
+                assert_eq!(1, children.len(), "Should have had one child");
+                let child = (&children[0]).clone();
+                assert_eq!(val_sym("a1"), child, "Should have been Val::Sym(a1)");
+            },
+            _ => assert!(false, "should have been a Val::Risp")
+        }
+    }
+
+    #[test]
+    fn symbol_can_not_start_with_a_number() {
+        init();
+        let res = parse("1a");
+        assert!(res.is_err(), "symbol cant start with a number");
+    }
+
+    #[test]
     fn parse_multiple_symbols() {
         init();
         let res = parse("a b c");
@@ -153,6 +167,20 @@ mod test {
             },
             _ => assert!(false, "should have been a Val::Risp")
         }
+    }
+
+    
+
+    #[test]
+    fn parse_single_char_operator() {
+        init();
+        assert_parse_risp("<", "Risp([Sym(\"<\")])");
+    }
+
+    #[test]
+    fn parse_double_char_operator() {
+        init();
+        assert_parse_risp("<=", "Risp([Sym(\"<=\")])");
     }
 
     #[test]
@@ -200,4 +228,6 @@ mod test {
             _ => assert!(false, "should have been a Val::Risp")
         }
     }
+
+    
 }

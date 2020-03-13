@@ -547,7 +547,7 @@ mod test {
         init();
         let mut env = Env::new(None);
         assert_eval("(ne 0 1 2)", &mut env, val_bool(true));
-        assert_eval("(/= 0 1 2)", &mut env, val_bool(true));
+        assert_eval("(!= 0 1 2)", &mut env, val_bool(true));
         assert_eval("(ne 0 1 1 2 3)", &mut env, val_bool(false));
     }
 

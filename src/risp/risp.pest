@@ -1,4 +1,3 @@
-COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 WHITESPACE = _{ (" " | NEWLINE ) }
 
 num = @{
@@ -6,15 +5,18 @@ num = @{
     ~ ("0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)
     ~ ("." ~ ASCII_DIGIT*)?
     ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+    ~ !(ASCII_ALPHA)
 }
 
-symbol = @{ (letter | ASCII_DIGIT | "_" | arithmetic_ops | "\\" | comparison_ops | "&")+ }
-    letter = { 'a' .. 'z' | 'A' .. 'Z' }
-    arithmetic_ops = { "+" | "-" | "*" | "/" | "%" | "^" }
-    comparison_ops = { "=" | "<" | ">" | "!" }
+operator = @{"+" | "-" | "*" | "/" | "%" | "^" | "==" | "!=" | ">=" | "<=" | "<" | ">" }
+
+symbol = @{ 
+    ASCII_ALPHA+
+    ~ (ASCII_ALPHA | ASCII_DIGIT | "_")*
+}
 
 list = { "(" ~ expr* ~ ")" }
 
-expr = { num | symbol | list }
+expr = { num | symbol | operator | list }
 
 risp = { SOI ~ expr* ~ EOI }
