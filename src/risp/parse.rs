@@ -7,7 +7,7 @@ use crate::risp::{
     val::*,
 };
 
-use chrono::{NaiveDateTime, NaiveTime};
+use chrono::{NaiveDateTime, NaiveDate, NaiveTime};
 
 #[cfg(debug_assertions)]
 const _GRAMMAR: &str = include_str!("risp.pest");
@@ -71,6 +71,11 @@ fn val_read(parsed: Pair<Rule>) -> RispResult {
             let t = NaiveTime::parse_from_str(s, "%H:%M:%S")?;
             Ok(val_time(t))
         },
+        Rule::date => {
+            let s = parsed.as_str();
+            let d = NaiveDate::parse_from_str(s, "%Y-%m-%d")?;
+            Ok(val_date(d))
+        }
         Rule::datetime => {
             let s = parsed.as_str();
             let dt = NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S")?;
@@ -245,6 +250,12 @@ mod test {
     fn parse_time() {
         init();
         assert_parse_risp("00:00:00", "Risp([Time(00:00:00)])");
+    }
+
+    #[test]
+    fn parse_date() {
+        init();
+        assert_parse_risp("2020-03-13", "Risp([Date(2020-03-13)])");
     }
     
     #[test]
