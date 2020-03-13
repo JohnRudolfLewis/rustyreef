@@ -7,7 +7,7 @@ use std::{
     cmp::Ordering,
     fmt
 };
-use chrono::{NaiveDateTime, NaiveDate, NaiveTime};
+use chrono::{Timelike, NaiveDateTime, NaiveDate, NaiveTime};
 
 type ValChildren = Vec<Box<Val>>;
 pub type Builtin = fn(&mut Env, &mut Val) -> RispResult;
@@ -115,6 +115,26 @@ impl PartialOrd for Val {
            Val::Num(s) => match other {
                Val::Num(o) => Some(s.cmp(o)),
                Val::Float(o) => (*s as f64).partial_cmp(o),
+               _ => None
+           },
+           Val::Time(s) => match other {
+               Val::Time(o) => Some(s.cmp(o)),
+               Val::DateTime(o) => {
+                   let blah = o.with_hour(s.hour())?.with_minute(s.minute())?.with_second(s.second())?.with_nanosecond(s.nanosecond())?;
+                   Some(blah.cmp(o))
+               },
+               _ => None
+           },
+           Val::Date(s) => match other {
+               Val::Date(o) => Some(s.cmp(o)),
+               _ => None
+           },
+           Val::DateTime(s) => match other {
+               Val::DateTime(o) => Some(s.cmp(o)),
+               Val::Time(o) => {
+                   let blah = s.with_hour(o.hour())?.with_minute(o.minute())?.with_second(o.second())?.with_nanosecond(o.nanosecond())?;
+                   Some(s.cmp(&blah))
+               }
                _ => None
            },
            _ => None

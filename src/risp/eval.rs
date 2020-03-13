@@ -3,6 +3,8 @@ use std::collections::{HashSet};
 use std::ops::{Add, Div, Mul, Rem, Sub};
 use std::cmp::Ordering;
 
+use chrono::{NaiveDate, NaiveTime, NaiveDateTime};
+
 use crate::risp::{
     env::Env,
     error::RispError,
@@ -604,6 +606,58 @@ mod test {
         assert_eval("(max a b)", &mut env, val_num(3));
     }
 
+    #[test]
+    fn compare_two_times() {
+        init();
+        let mut env = Env::new(None);
+        env.put("t1".to_string(), val_time(NaiveTime::from_hms(9, 0, 0)));
+        env.put("t2".to_string(), val_time(NaiveTime::from_hms(10, 0, 0)));
+        assert_eval("(> t1 t2)", &mut env, val_bool(false));
+        assert_eval("(< t1 t2)", &mut env, val_bool(true));
+        assert_eval("(>= t1 t2)", &mut env, val_bool(false));
+        assert_eval("(<= t1 t2)", &mut env, val_bool(true));
+        assert_eval("(min t1 t2)", &mut env, val_time(NaiveTime::from_hms(9, 0, 0)));
+        assert_eval("(max t1 t2)", &mut env, val_time(NaiveTime::from_hms(10, 0, 0)));
+    }
+
+    #[test]
+    fn compare_two_dates() {
+        init();
+        let mut env = Env::new(None);
+        env.put("t1".to_string(), val_date(NaiveDate::from_ymd(2020, 3, 12)));
+        env.put("t2".to_string(), val_date(NaiveDate::from_ymd(2020, 3, 13)));
+        assert_eval("(> t1 t2)", &mut env, val_bool(false));
+        assert_eval("(< t1 t2)", &mut env, val_bool(true));
+        assert_eval("(>= t1 t2)", &mut env, val_bool(false));
+        assert_eval("(<= t1 t2)", &mut env, val_bool(true));
+        assert_eval("(min t1 t2)", &mut env, val_date(NaiveDate::from_ymd(2020, 3, 12)));
+        assert_eval("(max t1 t2)", &mut env, val_date(NaiveDate::from_ymd(2020, 3, 13)));
+    }
+
+    #[test]
+    fn compare_two_datetimes() {
+        init();
+        let mut env = Env::new(None);
+        env.put("t1".to_string(), val_datetime(NaiveDate::from_ymd(2020, 3, 12).and_hms(0, 0, 1)));
+        env.put("t2".to_string(), val_datetime(NaiveDate::from_ymd(2020, 3, 12).and_hms(0, 0, 2)));
+        assert_eval("(> t1 t2)", &mut env, val_bool(false));
+        assert_eval("(< t1 t2)", &mut env, val_bool(true));
+        assert_eval("(>= t1 t2)", &mut env, val_bool(false));
+        assert_eval("(<= t1 t2)", &mut env, val_bool(true));
+        assert_eval("(min t1 t2)", &mut env, val_datetime(NaiveDate::from_ymd(2020, 3, 12).and_hms(0, 0, 1)));
+        assert_eval("(max t1 t2)", &mut env, val_datetime(NaiveDate::from_ymd(2020, 3, 12).and_hms(0, 0, 2)));
+    }
+
+    #[test]
+    fn compare_date_and_datetime() {
+        init();
+        let mut env = Env::new(None);
+        env.put("t1".to_string(),  val_datetime(NaiveDate::from_ymd(2020, 3, 12).and_hms(0, 0, 1)));
+        env.put("t2".to_string(), val_time(NaiveTime::from_hms(10, 0, 0)));
+        assert_eval("(> t1 t2)", &mut env, val_bool(false));
+        assert_eval("(> t2 t1)", &mut env, val_bool(true));
+    }
+    
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {
         let mut parsed = match parse(s) {
             Ok(p) => *p,
