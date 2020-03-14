@@ -45,6 +45,7 @@ impl Env {
         ret.add_builtin("now", builtin_now);
         ret.add_builtin("and", builtin_and);
         ret.add_builtin("or", builtin_or);
+        ret.add_builtin("not", builtin_not);
 
         // add constants
         ret.add_constant("true", val_bool(true));

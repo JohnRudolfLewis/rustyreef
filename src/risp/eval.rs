@@ -453,6 +453,27 @@ pub fn builtin_or(e: &mut Env, v: &mut Val) -> RispResult {
     }
 }
 
+pub fn builtin_not(e: &mut Env, v: &mut Val) -> RispResult {
+    // must have 1 arg
+    let mut arg_count = match *v {
+        Val::List(ref children) => {
+            let ret = children.len();
+            if ret != 1 {
+                return Err(RispError::NumArguments(1, ret));
+            }
+            ret
+        },
+        _ => return Err(RispError::WrongType("list".to_string(), format!("{:?}", v)))
+    };
+
+    let res = *eval(e, &mut *val_pop(v,0)?)?;
+    
+    match res {
+        Val::Bool(b) => Ok(val_bool(!b)),
+        _ => Ok(val_bool(false))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -774,6 +795,16 @@ mod test {
         let mut env = Env::new(None);
         assert_eval("(or (> 1 0) (< 0 1) (== 1 1) (42))", &mut env, val_num(42));
         assert_eval("(or (nil) (nil) (1) (42))", &mut env, val_num(42));
+    }
+
+    #[test]
+    fn not_operator() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(not nil)", &mut env, val_bool(true));
+        assert_eval("(not 1)", &mut env, val_bool(false));
+        assert_eval("(not (> 1 0))", &mut env, val_bool(false));
+        assert_eval("(not (< 1 0))", &mut env, val_bool(true));
     }
     
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {
