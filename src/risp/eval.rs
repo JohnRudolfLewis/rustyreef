@@ -386,6 +386,35 @@ pub fn builtin_now(_e: &mut Env, a: &mut Val) -> RispResult {
     return Ok(val_datetime(now));
 }
 
+pub fn builtin_and(e: &mut Env, v: &mut Val) -> RispResult {
+    // must have more than 1 arg
+    let mut arg_count = match *v {
+        Val::List(ref children) => children.len(),
+        _ => return Err(RispError::WrongType("list".to_string(), format!("{:?}", v)))
+    };
+    if arg_count < 2 {
+        return Err(RispError::NumArguments(2, arg_count));
+    }
+
+    // all but the last arg must eval non nil/false
+    while arg_count > 1 {
+        let res = *eval(e, &mut *val_pop(v,0)?)?;
+        match res {
+            Val::Bool(b) => {
+                if !b {
+                    return Ok(val_bool(false));
+                }
+            },
+            _ => { }
+        }
+        arg_count -= 1;
+    }
+
+    // if you got here, all args evaluated true, evaluate the last arg
+    let mut last_arg = val_pop(v, 0)?;
+    eval(e, &mut last_arg)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -689,6 +718,16 @@ mod test {
         env.put("t2".to_string(), val_datetime(t2));
         assert_eval("(> (now) t1)", &mut env, val_bool(true));
         assert_eval("(> (now) t2)", &mut env, val_bool(false));
+    }
+
+    #[test]
+    fn and_operator() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(and (> 1 0) (< 0 1) (== 1 1) (42))", &mut env, val_num(42));
+        assert_eval("(and (12) (13) (14) (15))", &mut env, val_num(15));
+        assert_eval("(and (1) (0) (nil) (true))", &mut env, val_bool(false));
+        assert_eval("(and (1) (0) (false) (true))", &mut env, val_bool(false));
     }
     
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {

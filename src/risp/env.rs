@@ -43,11 +43,22 @@ impl Env {
         ret.add_builtin("!=", builtin_ne);
         ret.add_builtin("if", builtin_if);
         ret.add_builtin("now", builtin_now);
+        ret.add_builtin("and", builtin_and);
+
+        // add constants
+        ret.add_constant("true", val_bool(true));
+        ret.add_constant("false", val_bool(false));
+        ret.add_constant("nil", val_bool(false));
+
         ret
     }
 
     fn add_builtin(&mut self, name: &str, func: Builtin) {
         self.put(name.to_string(), val_builtin(func, name))
+    }
+
+    fn add_constant(&mut self, name: &str, val: Box<Val>) {
+        self.put(name.to_string(), val);
     }
 
     pub fn put(&mut self, name: String, val: Box<Val>) {
