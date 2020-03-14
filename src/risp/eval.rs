@@ -455,7 +455,7 @@ pub fn builtin_or(e: &mut Env, v: &mut Val) -> RispResult {
 
 pub fn builtin_not(e: &mut Env, v: &mut Val) -> RispResult {
     // must have 1 arg
-    let mut arg_count = match *v {
+    match *v {
         Val::List(ref children) => {
             let ret = children.len();
             if ret != 1 {
