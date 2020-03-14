@@ -415,6 +415,44 @@ pub fn builtin_and(e: &mut Env, v: &mut Val) -> RispResult {
     eval(e, &mut last_arg)
 }
 
+pub fn builtin_or(e: &mut Env, v: &mut Val) -> RispResult {
+    // must have more than 1 arg
+    let mut arg_count = match *v {
+        Val::List(ref children) => {
+            let ret = children.len();
+            if ret < 2 {
+                return Err(RispError::NumArguments(2, ret));
+            }
+            ret
+        },
+        _ => return Err(RispError::WrongType("list".to_string(), format!("{:?}", v)))
+    };
+
+    // at least one except the last arg must eval non nil/false
+    let mut one_true = false;
+    while arg_count > 1 {
+        let res = *eval(e, &mut *val_pop(v,0)?)?;
+        match res {
+            Val::Bool(b) => {
+                if b {
+                    one_true = true;
+                }
+            },
+            _ => { 
+                one_true = true;
+            }
+        }
+        arg_count -= 1;
+    }
+
+    if one_true {
+        let mut last_arg = val_pop(v, 0)?;
+        return eval(e, &mut last_arg);
+    } else {
+        return Ok(val_bool(false));
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -728,6 +766,14 @@ mod test {
         assert_eval("(and (12) (13) (14) (15))", &mut env, val_num(15));
         assert_eval("(and (1) (0) (nil) (true))", &mut env, val_bool(false));
         assert_eval("(and (1) (0) (false) (true))", &mut env, val_bool(false));
+    }
+
+    #[test]
+    fn or_operator() {
+        init();
+        let mut env = Env::new(None);
+        assert_eval("(or (> 1 0) (< 0 1) (== 1 1) (42))", &mut env, val_num(42));
+        assert_eval("(or (nil) (nil) (1) (42))", &mut env, val_num(42));
     }
     
     fn assert_eval(s: &str, env: &mut Env, v: Box<Val>) {
