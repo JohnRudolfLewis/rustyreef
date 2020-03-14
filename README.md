@@ -14,6 +14,8 @@ A RaspberryPi based reef controller implemented in Rust where the outputs are fu
 
 Nacent. Just getting started. Do not use any of this yet.
 
+![Rust](https://github.com/JohnRudolfLewis/rustyreef/workflows/Rust/badge.svg?branch=master)
+
 ### TODO
 
 Major systems
